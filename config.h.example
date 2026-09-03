@@ -1,0 +1,84 @@
+#pragma once
+// Copy this file to config.h and fill in your real values.
+// config.h should be gitignored, same as on the other ESP32-C3 projects.
+
+#define WIFI_SSID "your-wifi-ssid"
+#define WIFI_PASSWORD "your-wifi-password"
+
+// Static IP (following the established project pattern)
+#define USE_STATIC_IP 1
+#define STATIC_IP 192, 168, 1, 150
+#define STATIC_GATEWAY 192, 168, 1, 1
+#define STATIC_SUBNET 255, 255, 255, 0
+#define STATIC_DNS 192, 168, 1, 1
+
+#define MQTT_HOST "192.168.1.10"
+#define MQTT_PORT 1883
+#define MQTT_USER "mqttuser"
+#define MQTT_PASSWORD "mqttpass"
+
+// Used to build all MQTT topics and the HA unique_id / entity names.
+#define DEVICE_ID "toshiba-ac"
+#define DEVICE_NAME "Toshiba AC"
+
+// UART pins to the AC's internal wifi-module connector.
+// Needs a 5V<->3.3V level shifter (e.g. a Pololu bidirectional shifter);
+// connecting RX/TX directly to the AC's 5V UART has caused reported WiFi
+// brownouts on ESP32/ESP8266 boards in the upstream project's issue tracker.
+// Disconnect AC mains before wiring. Never connect the outermost pink-wire /
+// pin-5 contact; see README.md for the complete wiring and power precautions.
+#define AC_UART_TX_PIN 4
+#define AC_UART_RX_PIN 5
+
+// Antenna switch (ESP32-C5-Zero only — the onboard RF switch chip that
+// picks between the onboard PCB antenna and the U.FL/IPEX external
+// connector). Confirmed from the board's schematic: GPIO26 drives the
+// switch's control net directly. Set to 1 if you've wired an external
+// antenna to the U.FL connector; set to 0 to use the onboard antenna.
+// The HIGH/LOW polarity for "external" wasn't extractable from the
+// schematic text — if WiFi signal looks worse with USE_EXTERNAL_ANTENNA=1
+// than with it at 0 (check the wifi_signal/state MQTT topic this firmware
+// already publishes), flip ANT_SW_EXTERNAL_LEVEL below.
+#define USE_EXTERNAL_ANTENNA 1
+#define ANT_SW_PIN 26
+#define ANT_SW_EXTERNAL_LEVEL HIGH
+
+// Onboard WS2812 status LED (ESP32-C5-Zero: GPIO27, confirmed from the
+// board's schematic). Boot = 3 quick white blinks. Then: blinking blue =
+// no WiFi yet, solid blue = WiFi up but MQTT not connected yet, solid
+// green = fully connected. Set to 0 if your board doesn't have one wired
+// to STATUS_LED_PIN.
+#define USE_STATUS_LED 1
+#define STATUS_LED_PIN 27
+
+// Debug mode: hex-dumps every AC UART frame sent/received (including
+// checksum-rejected ones), logs every decoded AC state change, every MQTT
+// publish and incoming command, and prints a periodic heartbeat line
+// (uptime, free heap, RSSI, MQTT status). All of this is on top of the
+// always-on boot/WiFi/MQTT milestone logging. No functional behavior
+// changes either way — purely more Serial output when set to 1.
+#define DEBUG_MODE 0
+
+// Bare-board test helper. When DEBUG_MODE is also 1, injects a repeating set
+// of realistic MQTT commands without requiring WiFi, a broker, or an AC.
+// The serial log shows [mqtt SIM] and the resulting [ac TX] frames.
+#define DEBUG_SIMULATE_MQTT 0
+
+// Local web controls. Change these before enabling the device on a network
+// shared with untrusted users. The interface uses HTTP Basic Authentication.
+#define WEB_SERVER_ENABLED 1
+#define WEB_USERNAME "admin"
+#define WEB_PASSWORD "choose-a-web-password"
+
+// OTA
+#define OTA_PASSWORD "choose-an-ota-password"
+
+// Remote debug log. Mirrors every dbg.print/println line (boot, WiFi/MQTT
+// milestones, and everything DEBUG_MODE adds) out to a raw TCP socket in
+// addition to physical USB serial — needed now that the board is sealed
+// inside the AC. Connect with `telnet <device-ip> <NETLOG_PORT>` (or `nc`
+// if telnet isn't installed). No authentication on this stream — it never
+// carries passwords, but does carry AC state/MQTT traffic, so keep it on
+// this trusted network. Set to 0 to turn the listener off entirely.
+#define NETLOG_ENABLED 1
+#define NETLOG_PORT 23
