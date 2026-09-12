@@ -406,3 +406,15 @@ by the restored value once this board comes back online.
 All of this is published via retained HA discovery configs on
 `homeassistant/<component>/toshiba-ac1/.../config`, so it should show up in
 Home Assistant automatically once MQTT discovery is enabled.
+
+## Version History
+
+Unlike the rest of this fleet, this firmware doesn't define a
+`FW_VERSION`/`FIRMWARE_VERSION` constant yet, so there's nothing to log a
+number against — just the one release so far. Worth adding a version
+constant (and an `sw_version` field in the HA discovery device block) if
+you want this tracked going forward like the other projects.
+
+| Version | Date | Changes |
+|---|---|---|
+| — | 2026-09-03 | Initial release. |
