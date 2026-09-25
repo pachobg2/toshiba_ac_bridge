@@ -11,6 +11,7 @@
 // on connect, MQTT fail-count diagnostic, static IP, manufacturer P@cho).
 
 #include <Arduino.h>
+#include <esp_timer.h>
 #include <WiFi.h>
 #include <ArduinoOTA.h>
 #include <espMqttClient.h>
@@ -44,6 +45,7 @@ static const String T_PWRLEVEL_CMD = BASE + "power_level/set";
 static const String T_WIFI_RSSI = BASE + "wifi_signal/state";
 static const String T_RESET_REASON = BASE + "reset_reason/state";
 static const String T_MQTT_FAILS = BASE + "mqtt_fail_count/state";
+static const String T_UPTIME = BASE + "uptime/state";
 static const String T_OTA_RESTART_CMD = BASE + "ota_restart/set";
 
 // ---------------- Globals ----------------
@@ -280,6 +282,13 @@ bool parseTargetTemp(const String &s, uint8_t &out) {
   return false;
 }
 
+// Seconds since this boot. esp_timer_get_time() is 64-bit microseconds since
+// boot, so unlike millis() it doesn't wrap back to zero at ~49.7 days --
+// uptime should only ever zero on a real reset or power loss.
+static uint32_t uptime_seconds() {
+  return (uint32_t)(esp_timer_get_time() / 1000000LL);
+}
+
 const char *reset_reason_str() {
   switch (esp_reset_reason()) {
     case ESP_RST_POWERON: return "power_on";
@@ -408,6 +417,13 @@ void publishDiscovery() {
     String cfg = "{\"name\":\"MQTT Fail Count\",\"unique_id\":\"" + String(DEVICE_ID) + "_mqtt_fails\",";
     cfg += avail + ",\"state_topic\":\"" + T_MQTT_FAILS + "\",\"entity_category\":\"diagnostic\",\"state_class\":\"total_increasing\"," + deviceBlock + "}";
     publishRetained("homeassistant/sensor/" + String(DEVICE_ID) + "/mqtt_fails/config", cfg);
+  }
+  {
+    // Seconds since this boot; zeroes on any reset or power loss (see uptime_seconds())
+    String cfg = "{\"name\":\"Uptime\",\"unique_id\":\"" + String(DEVICE_ID) + "_uptime\",";
+    cfg += avail + ",\"state_topic\":\"" + T_UPTIME + "\",\"device_class\":\"duration\",";
+    cfg += "\"unit_of_measurement\":\"s\",\"entity_category\":\"diagnostic\",\"state_class\":\"measurement\"," + deviceBlock + "}";
+    publishRetained("homeassistant/sensor/" + String(DEVICE_ID) + "/uptime/config", cfg);
   }
   {
     String cfg = "{\"name\":\"OTA Restart\",\"unique_id\":\"" + String(DEVICE_ID) + "_ota_restart\",";
@@ -1011,7 +1027,7 @@ void loop() {
   if (now - lastHeartbeatMs > HEARTBEAT_INTERVAL_MS) {
     lastHeartbeatMs = now;
     dbg.print("[hb] uptime_s=");
-    dbg.print(now / 1000);
+    dbg.print(uptime_seconds());
     dbg.print(" heap=");
     dbg.print(ESP.getFreeHeap());
     dbg.print(" rssi=");
@@ -1058,5 +1074,6 @@ void loop() {
     lastWifiPublish = now;
     publishRetained(T_WIFI_RSSI, String(WiFi.RSSI()));
     publishRetained(T_MQTT_FAILS, String(mqttFailCount));
+    publishRetained(T_UPTIME, String(uptime_seconds()));
   }
 }

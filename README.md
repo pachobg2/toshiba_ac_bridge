@@ -400,6 +400,7 @@ by the restored value once this board comes back online.
 | `wifi_signal/state` | out | RSSI dBm |
 | `reset_reason/state` | out | reset cause string |
 | `mqtt_fail_count/state` | out | disconnect counter |
+| `uptime/state` | out | seconds since boot (zeroes on any reset/power loss) |
 | `ota_restart/set` | in | any payload restarts the device |
 | `status` | out | online/offline (LWT) |
 
@@ -418,3 +419,4 @@ you want this tracked going forward like the other projects.
 | Version | Date | Changes |
 |---|---|---|
 | — | 2026-09-03 | Initial release. |
+| — | 2026-09-25 | Added an `Uptime` diagnostic sensor (seconds since boot, `device_class: duration`) using 64-bit `esp_timer_get_time()` -- zeroes on any reboot or power loss, never wraps at ~49.7 days like `millis()`. This project has no `FIRMWARE_VERSION` constant, so no version bump. |
